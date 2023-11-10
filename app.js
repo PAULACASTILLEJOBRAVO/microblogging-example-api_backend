@@ -30,7 +30,8 @@ app.use(function(req, res, next) {
 });
 
 var mongoose = require('mongoose');
-mongoose.connect('mongodb+srv://PAULACASTILLEJOBRAVO:Paula2002@cluster0.vcuss2p.mongodb.net/?retryWrites=true&w=majority',
+require('dotenv').config();
+mongoose.connect(process.env.DB_URI,
                  { useNewUrlParser: true, useUnifiedTopology: true })
                 .then(() => console.log('mymerndb connection successful'))
                 .catch((err) => console.error(err));
