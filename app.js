@@ -29,6 +29,12 @@ app.use(function(req, res, next) {
   next(createError(404));
 });
 
+var mongoose = require('mongoose');
+mongoose.connect('mongodb+srv://PAULACASTILLEJOBRAVO:Paula2002@cluster0.vcuss2p.mongodb.net/?retryWrites=true&w=majority',
+                 { useNewUrlParser: true, useUnifiedTopology: true })
+                .then(() => console.log('mymerndb connection successful'))
+                .catch((err) => console.error(err));
+
 // error handler
 app.use(function(err, req, res, next) {
   // set locals, only providing error in development
