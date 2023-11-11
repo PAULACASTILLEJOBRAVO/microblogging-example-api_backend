@@ -1,6 +1,6 @@
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
-var debug = require("debug")("moviesAppAuth:server");
+var debug = require("debug")("microblogging-example-api:server:server");
 
 
 //Para la encriptación del password

@@ -8,7 +8,7 @@ const dotenv = require('dotenv');
 // get config vars
 dotenv.config();
 
-var debug = require("debug")("moviesAppAuth:server");
+var debug = require("debug")("microblogging-example-api:server:server");
 
 //Models
 var User = require("../models/User.js");
