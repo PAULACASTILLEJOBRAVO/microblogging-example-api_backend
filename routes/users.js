@@ -1,74 +1,151 @@
-var express = require('express');
+var express = require("express");
+var mongoose = require("mongoose");
+var jwt = require("jsonwebtoken");
 var router = express.Router();
 
-/* GET users listing. */
-router.get('/', function(req, res, next) {
-  res.json({
-    "users":[
-      {
-        "id":123,
-        "name":"Elasio Guardiola",
-        "phones":{
-          "home":"800-123-4567",
-          "mobile":"877-123-1234"
-        },
-        "email":[
-          "jd@example.com",
-          "jd@example.org"
-        ],
-        "dateOfBirth":"1980-01-02T00:00:00.000Z",
-        "registered":true
-      },
-      {
-        "id":456,
-        "name":"Nemesio Tornero",
-        "phones":{
-          "home":"800-123-3498",
-          "mobile":"877-432-1278"
-        },
-        "email":[
-          "pt@example.com",
-          "pt@example.org"
-        ],
-        "dateOfBirth":"1983-01-09T00:00:00.000Z",
-        "registered":false
-      }
-    ]});
+// Token generation imports
+const dotenv = require('dotenv');
+// get config vars
+dotenv.config();
+
+var debug = require("debug")("moviesAppAuth:server");
+
+//Models
+var User = require("../models/User.js");
+
+var db = mongoose.connection;
+
+function tokenVerify (req, res, next) {
+    var authHeader=req.get('authorization');
+    const retrievedToken = authHeader.split(' ')[1];
+    
+    if (!retrievedToken) {
+        res.status(401).send({
+            ok: false,
+            message: "Token inválido"
+        })
+    }else{       
+        jwt.verify(retrievedToken, process.env.TOKEN_SECRET,  function (err, retrievedToken) {
+            if (err) {
+                res.status(401).send({
+                    ok: false,
+                    message: "Token inválido"
+                });
+            } else {
+                next();
+            }
+        });
+    }
+}
+
+router.get("/secure", tokenVerify, 
+function (req, res, next) {
+    debug("Acceso seguro con token a los usuarios");
+    User.find().sort("-creationdate").exec(function (err, users) {
+        if (err) res.status(500).send(err);
+        else res.status(200).json(users);
+    })
 });
 
-router.get('/:id', function(req, res, next) {
-  if(req.params.id == "123"){
-    res.json({
-      "id":123,
-      "name":"Elasio Guardiola",
-      "phones":{
-        "home":"800-123-4567",
-        "mobile":"877-123-1234"
-      },
-      "email":[
-        "jd@example.com",
-        "jd@example.org"
-      ],
-      "dateOfBirth":"1980-01-02T00:00:00.000Z",
-      "registered":true
+router.get("/",
+function (req, res, next) {
+    User.find().sort("-creationdate").exec(function (err, users) {
+        if (err) res.status(500).send(err);
+        else res.status(200).json(users);
+    })
+});
+
+
+// GET de un único usuario por su Id
+router.get("/secure/:id", tokenVerify, function (req, res, next) {
+    debug("Acceso seguro con token a un usuario");
+    User.findById(req.params.id, function (err, userinfo) {
+        if (err) res.status(500).send(err);
+        else res.status(200).json(userinfo);
     });
-  }else{
-    res.status(404).send("¡Lo siento, el ítem no se ha encontrado!");
-  }
 });
 
-router.post('/', function(req, res) {
-  var new_user = req.body;
-  res.status(200).send("Usuario " + req.body.name + " ha sido añadido satisfactoriamente");
+// POST de un nuevo usuario
+router.post("/", function (req, res, next) {
+    User.create(req.body, function (err, userinfo) {
+        if (err) res.status(500).send(err);
+        else res.sendStatus(200);
+    });
 });
 
-router.put('/:id', function(req, res) {
-  var adapter_user = req.body;
-  res.status(200).send("Usuario " + req.body.name + " ha sido actualizado satisfactoriamente");
+// POST de un nuevo usuario
+router.post("/secure", tokenVerify, function (req, res, next) {
+    debug("Creación de un usuario segura con token");
+    User.create(req.body, function (err, userinfo) {
+        if (err) res.status(500).send(err);
+        else res.sendStatus(200);
+    });
 });
 
-router.delete('/:id', function(req, res) {
-  res.status(200).send("Usuario con id " + req.body.id + " ha sido borrado satisfactoriamente");
+router.put("/secure/:id", tokenVerify, function (req, res, next) {
+    debug("Modificación segura de un usuario con token");
+    User.findByIdAndUpdate(req.params.id, req.body, function (err, userinfo) {
+        if (err) res.status(500).send(err);
+        else res.sendStatus(200);
+    });
+});
+
+// DELETE de un usuario existente identificado por su Id
+router.delete("/secure/:id", tokenVerify, function (req, res, next) {
+    debug("Borrado seguro de un usuario con token");
+    User.findByIdAndDelete(req.params.id, function (err, userinfo) {
+        if (err) res.status(500).send(err);
+        else res.sendStatus(200);
+    });
+});
+
+// DELETE de un usuario existente identificado por su Id
+router.delete("/:id", function (req, res, next) {
+    User.findByIdAndDelete(req.params.id, function (err, userinfo) {
+        if (err) res.status(500).send(err);
+        else res.sendStatus(200);
+    });
+});
+
+router.post("/signin", 
+function (req, res, next) {
+    debug("login");
+        User.findOne({
+            username: req.body.username
+        }, function (err, user) {
+            if (err) { //error al consultar la BBDD
+                res.status(500).send("¡Error comprobando el usuario!");
+            }
+            if (user != null) { //El usuario existe (ahora a ver si coincide el password)
+                debug("El usuario existe");
+                user.comparePassword(req.body.password, 
+                     function (err, isMatch) {
+                          if (err) res.status(500).send("¡Error comprobando el password!");
+                          if (isMatch){  
+                                next(); //pasamos a generar el token
+                          }else
+                                res.status(401).send({
+                                   message: "Password no coincide"
+                          });    
+                    }
+                );
+            }
+            else { //El usuario NO existe en la base de datos
+                res.status(401).send({
+                    message: "Usuario no existe"
+                });
+            }
+        });
+},
+function (req, res, next) {
+    debug("... generando token");
+    jwt.sign({username: req.body.username},process.env.TOKEN_SECRET, {expiresIn: 3600 // expira en 1 hora...
+    }, function(err, generatedToken) {
+        if (err) res.status(500).send("¡Error generando token de autenticación");
+        else res.status(200).send({
+            message: generatedToken
+       });
+    });
 });
 
 module.exports = router;
