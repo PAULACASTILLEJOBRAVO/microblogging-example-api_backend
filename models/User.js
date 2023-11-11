@@ -1,6 +1,6 @@
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
-var debug = require("debug")("microblogging-example-api:server:server");
+var debug = require("debug")("microblogging-example-api:server");
 
 
 //Para la encriptación del password
