@@ -122,7 +122,11 @@ function (req, res, next) {
                      function (err, isMatch) {
                           if (err) res.status(500).send("¡Error comprobando el password!");
                           if (isMatch){  
-                                next(); //pasamos a generar el token
+                            res.status(200).send({
+                                message: "ok",
+                                role: user.role,
+                                id: user._id
+                       });   //pasamos a generar el token
                           }else
                                 res.status(401).send({
                                    message: "Password no coincide"
@@ -136,16 +140,16 @@ function (req, res, next) {
                 });
             }
         });
-},
-function (req, res, next) {
-    debug("... generando token");
-    jwt.sign({username: req.body.username},process.env.TOKEN_SECRET, {expiresIn: 3600 // expira en 1 hora...
-    }, function(err, generatedToken) {
-        if (err) res.status(500).send("¡Error generando token de autenticación");
-        else res.status(200).send({
-            message: generatedToken
-       });
-    });
+//},
+// function (req, res, next) {
+//     debug("... generando token");
+//     jwt.sign({username: req.body.username},process.env.TOKEN_SECRET, {expiresIn: 3600 // expira en 1 hora...
+//     }, function(err, generatedToken) {
+//         if (err) res.status(500).send("¡Error generando token de autenticación");
+//         else res.status(200).send({
+//             message: generatedToken
+//        });
+//     });
 });
 
 module.exports = router;
