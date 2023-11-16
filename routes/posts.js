@@ -28,6 +28,7 @@ router.post("/", function(req, res, next){
             var postInstance = new Post({
                 user: req.body.user,
                 title: req.body.title,
+                email: req.body.email,
                 description: req.body.description
             });
             userinfo.posts.push(postInstance);
