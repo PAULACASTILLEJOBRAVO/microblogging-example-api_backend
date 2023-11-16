@@ -2,7 +2,7 @@ var express = require("express");
 var mongoose = require("mongoose");
 var jwt = require("jsonwebtoken");
 var router = express.Router();
-
+var Post = require('../models/Posts.js');
 // Token generation imports
 const dotenv = require('dotenv');
 // get config vars

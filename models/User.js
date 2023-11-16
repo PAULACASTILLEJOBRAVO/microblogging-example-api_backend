@@ -28,7 +28,8 @@ var UserSchema = new Schema({
     creationdate: {
         type: Date,
         default: Date.now
-    }
+    },
+    posts: [{type: Schema.ObjectId, ref: 'Post', default: null}]
 });
 
 /* El pre middleware se ejecuta antes de que suceda la operacion. 
