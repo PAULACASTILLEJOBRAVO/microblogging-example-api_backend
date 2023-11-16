@@ -22,11 +22,11 @@ function (req, res) {
 });
 
 router.post("/", function(req, res, next){
-    User.findById(req.body.iduser, function(err, userinfo){
+    User.findById(req.body.user, function(err, userinfo){
         if(err) res.status(500).send(err);
         else{
             var postInstance = new Post({
-                user: req.body.iduser,
+                user: req.body.user,
                 title: req.body.title,
                 description: req.body.description
             });
