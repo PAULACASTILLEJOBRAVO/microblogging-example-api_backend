@@ -45,7 +45,7 @@ router.post("/", function(req, res, next){
 });
 
 router.put('/:id', function(req, res){
-    Post.findByIdAndUpdate(req.params.id, res.body, function(err, postinfo){
+    Post.findByIdAndUpdate(req.params.id, req.body, function(err, postinfo){
         if(err) res.status(500).send(err);
         res.sendStatus(200);
     });
