@@ -13,4 +13,12 @@ function (req, res, next) {
     })
 });
 
+router.get("/all/:id",
+function (req, res, next) {
+    Post.find({'user':req.params.id}).sort("-publicationdate").populate('user').exec(function (err, posts) {
+        if (err) res.status(500).send(err);
+        else res.status(200).json(posts);
+    })
+});
+
 module.exports = router;
