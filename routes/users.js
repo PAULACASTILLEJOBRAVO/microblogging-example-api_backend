@@ -70,11 +70,11 @@ router.post("/", function (req, res, next) {
     User.create(req.body, function (err, userinfo) {
         if (err) res.status(500).send(err);
         else res.status(200).send({
-                                message: "OK",
+                                message: "ok",
                                 role: user.role,
                                 id: user._id,
                                 email: user.email
-                       });;
+                       });
     });
 });
 
