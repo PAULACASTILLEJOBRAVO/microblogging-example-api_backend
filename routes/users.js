@@ -71,9 +71,9 @@ router.post("/", function (req, res, next) {
         if (err) res.status(500).send(err);
         else res.status(200).send({
                                 message: "ok",
-                                role: user.role,
-                                id: user._id,
-                                email: user.email
+                                role: res.role,
+                                id: res._id,
+                                email: res.email
                        });
     });
 });
