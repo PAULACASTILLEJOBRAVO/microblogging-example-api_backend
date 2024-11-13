@@ -69,7 +69,7 @@ router.get("/secure/:id", tokenVerify, function (req, res, next) {
 router.post("/", function (req, res, next) {
     User.create(req.body, function (err, userinfo) {
         if (err) res.status(500).send(err);
-        else res.sendStatus(200).send({
+        else res.status(200).send({
                                 message: "OK",
                                 role: user.role,
                                 id: user._id,
