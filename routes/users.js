@@ -125,7 +125,8 @@ function (req, res, next) {
                             res.status(200).send({
                                 message: "ok",
                                 role: user.role,
-                                id: user._id
+                                id: user._id,
+                                email: user.email
                        });   //pasamos a generar el token
                           }else
                                 res.status(401).send({
