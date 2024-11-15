@@ -78,7 +78,12 @@ router.get("/secure/:id", tokenVerify, function (req, res, next) {
 router.post("/", function (req, res, next) {
     User.create(req.body, function (err, userinfo) {
         if (err) res.status(500).send(err);
-        else res.sendStatus(200);
+        else res.status(200).send({
+                                message: "ok",
+                                role: res.role,
+                                id: res._id,
+                                email: res.email
+                       });
     });
 });
 
