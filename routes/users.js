@@ -57,6 +57,15 @@ function (req, res, next) {
 
 
 // GET de un único usuario por su Id
+router.get("/:id", 
+    function (req, res, next) {
+        User.findById(req.params.id, function (err, user) {
+            if (err) res.status(500).send(err);
+            else res.status(200).json(user);
+    });
+});
+
+// GET de un único usuario por su Id
 router.get("/secure/:id", tokenVerify, function (req, res, next) {
     debug("Acceso seguro con token a un usuario");
     User.findById(req.params.id, function (err, userinfo) {
