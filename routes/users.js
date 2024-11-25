@@ -96,6 +96,13 @@ router.post("/secure", tokenVerify, function (req, res, next) {
     });
 });
 
+router.put("/:id", function (req, res, next) {
+    User.findByIdAndUpdate(req.params.id, req.body, function (err, userinfo) {
+        if (err) res.status(500).send(err);
+        else res.sendStatus(200);
+    });
+});
+
 router.put("/secure/:id", tokenVerify, function (req, res, next) {
     debug("Modificación segura de un usuario con token");
     User.findByIdAndUpdate(req.params.id, req.body, function (err, userinfo) {
