@@ -1,68 +1,90 @@
 var express = require('express');
-var mongoose = require('mongoose');
 var router = express.Router();
+
+var debug = require("debug")("microblogging-example-api:posts-route");
+
+//Models
 var Post = require('../models/Posts');
 var User = require('../models/User');
-var db = mongoose.connection;
 
-router.get("/",
-function (req, res) {
-    Post.find().sort("-publicationdate").populate('user').exec(function (err, posts) {
-        if (err) res.status(500).send(err);
-        else res.status(200).json(posts);
+//GET de todos los blogs
+router.get("/all", (req, res) => {
+    debug("Acceso a todos los blogs");
+
+    Post.find().sort("-publicationdate").populate('user')
+    .then(posts => {
+        if(!posts) return res.status(404).send({ message: "Blog no encontrado" });
+        res.status(200).json({ message: "Blogs encontrados correctamente", posts });
     })
+    .catch(error => res.status(500).send({ message: "Error al obtener los blogs", error }));
 });
 
-router.get("/all/:id",
-function (req, res) {
-    Post.find({'user':req.params.id}).sort("-publicationdate").populate('user').exec(function (err, posts) {
-        if (err) res.status(500).send(err);
-        else res.status(200).json(posts);
+//GET de un único blog por el id del usuario que lo creó
+router.get("/:id", (req, res) => {
+    debug("Acceso a un solo blog");
+
+    Post.find({user: req.params.id}).sort("-publicationdate").populate('user')
+    .then(posts => {
+        if(!posts) return res.status(404).send({ message: "Blog no encontrado" });
+        res.status(200).json({ message: "Blog encontrado correctamente", posts });
     })
+    .catch(error =>res.status(500).send({ message: "Error al obtener el blog", error }));
 });
 
-router.post("/", function(req, res, next){
-    User.findById(req.body.user, function(err, userinfo){
-        if(err) res.status(500).send(err);
-        else{
-            var postInstance = new Post({
-                user: req.body.user,
-                title: req.body.title,
-                email: req.body.email,
-                description: req.body.description
-            });
-            userinfo.posts.push(postInstance);
-            userinfo.save(function(err){
-                if(err) res.status(500).send(err);
-                else{
-                    postInstance.save(function(err){
-                        if(err) res.status(500).send(err);
-                        res.sendStatus(200);
-                    });
-                }
-            });
+// POST de un nuevo blog
+router.post("/", (req, res) => {
+    debug("Creación de un blog");
+
+    User.findById(req.body.user)
+    .then(users => {
+        if (!users) {
+            return res.status(404).send({ message: "Usuario no encontrado" });
         }
-    });
+        
+        var postInstance = new Post({
+            user: req.body.user,
+            title: req.body.title,
+            email: req.body.email,
+            description: req.body.description
+        });
+
+        users.posts.push(postInstance);
+        
+        return users.save()
+        .then(() => { return postInstance.save() })
+        .then(() => res.status(200).send({ message: "Blog creado correctamente" }))
+        .catch(error => res.status(500).send({ message: "Error al guardar el blog", error }));
+    })
+    .catch(error => res.status(500).send({ message: "Error al crear el blog", error }));
 });
 
-router.put('/:id', function(req, res){
-    Post.findByIdAndUpdate(req.params.id, req.body, function(err, postinfo){
-        if(err) res.status(500).send(err);
-        res.sendStatus(200);
-    });
+
+//PUT de un blog existente identificado por su Id
+router.put('/:id', (req, res) => {
+    debug("Modificación de un blog");
+
+    Post.findByIdAndUpdate(req.params.id, req.body)
+    .then(posts => {
+        if(!posts) return res.status(404).send({ message: "Blog no encontrado" });
+
+        res.status(200).send({ message: "Blog modificado correctamente" })
+    })
+    .catch(error => res.status(500).send({ message: "Error al modificar el blog", error }));
 });
 
-router.delete('/:id', function(req, res, next){
-    Post.findByIdAndDelete(req.params.id, function(err, postinfo){
-        if(err) res.status(500).send(err);
-        else{
-            User.findByIdAndUpdate(postinfo.user, {$pull: {posts: postinfo._id}},
-                function(err, userinfo){
-                    if(err) res.status(500).send(err);
-                    res.sendStatus(200);
-                });
-        }
-    });
+// DELETE de un blog existente identificado por su Id
+router.delete('/:id', (req, res) => {
+    debug("Borrado de un blog");
+
+    Post.findByIdAndDelete(req.params.id)
+    .then(posts => {
+        if(!posts) return res.status(404).send({ message: "Blog no encontrado" });
+
+        User.findByIdAndUpdate(posts.user, {$pull: {posts: posts._id}})
+        .then(() => res.status(200).send({ message: "Blog eliminado correctamente" }))
+        .catch(error => res.status(500).send({ message: "Error al actualizar el usuario", error }));
+    })
+    .catch(error => res.status(500).send({ message: "Error al eliminar el blog", error }));
 });
 
 module.exports = router;

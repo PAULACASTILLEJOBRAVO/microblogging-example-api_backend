@@ -3,13 +3,15 @@ var express = require("express");
 var path = require("path");
 var cookieParser = require("cookie-parser");
 var logger = require("morgan");
-var debug = require('debug')('microblogging-example-api:server');
+
+var debug = require('debug')('microblogging-example-api-backend:app');
 
 const dotenv = require('dotenv');
-// get config vars
 dotenv.config();
 
 var mongoose = require("mongoose");
+
+mongoose.set('strictQuery', true);
 
 var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/users");

@@ -1,7 +1,6 @@
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
-var debug = require("debug")("microblogging-example-api:server");
-
+var debug = require("debug")("microblogging-example-api:Users-model");
 
 //Para la encriptación del password
 var bcrypt = require("bcryptjs");
@@ -34,7 +33,13 @@ var UserSchema = new Schema({
         type: Date,
         default: Date.now
     },
-    posts: [{type: Schema.ObjectId, ref: 'Post', default: null}],
+    posts: [
+        {
+            type: Schema.ObjectId, 
+            ref: 'Post', 
+            default: null
+        }
+    ],
     aboutMe: String,
 });
 
@@ -42,29 +47,31 @@ var UserSchema = new Schema({
 Por ejemplo, un middleware pre-save sera ejecutado antes de salvar 
 el documento.  */
 
-UserSchema.pre("save", function (next) {
+UserSchema.pre("save", next => {
     var user = this;
+
     debug("En middleware pre (save)...");
+    
     // solo aplica una función hash al password si ha sido modificado (o es nuevo)
     if (!user.isModified("password")) return next();
+    
     // genera la salt
-    bcrypt.genSalt(SALT_WORK_FACTOR, function (err, salt) {
-        if (err) return next(err);
-        // aplica una función hash al password usando la nueva salt
-        bcrypt.hash(user.password, salt, function (err, hash) {
-            if (err) return next(err);
+    bcrypt.genSalt(SALT_WORK_FACTOR)
+        .then(salt => {
+            // aplica una función hash al password usando la nueva salt
+            bcrypt.hash(user.password, salt)
+        })
+        .then(hash => {
             // sobrescribe el password escrito con el “hasheado”
             user.password = hash;
             next();
-        });
-    });
+        })
+        .catch(err => next(err));
 });
 
-UserSchema.methods.comparePassword = function (candidatePassword, cb) {
-    bcrypt.compare(candidatePassword, this.password, function (err, isMatch) {
-        if (err) return cb(err);
-        cb(null, isMatch);
-    });
+
+UserSchema.methods.comparePassword = function (candidatePassword) {
+    return bcrypt.compare(candidatePassword, this.password);
 };
 
 module.exports = mongoose.model('User', UserSchema);

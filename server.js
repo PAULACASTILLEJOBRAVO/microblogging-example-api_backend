@@ -1,6 +1,6 @@
 const app = require('./app');
 const server = require('http').Server(app);
-const debug = require('debug')('microblogging-example-api:server');
+const debug = require('debug')('microblogging-example-api-backend:server');
 require('dotenv').config();
 const port = process.env.PORT || 3000;
 

@@ -1,7 +1,5 @@
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
-var debug = require("debug")("microblogging-example-api:server");
-var User = require('../models/User');
 
 var PostSchema = new Schema({
     user: {
