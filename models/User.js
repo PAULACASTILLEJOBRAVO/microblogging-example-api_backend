@@ -27,20 +27,25 @@ var UserSchema = new Schema({
     role:{
         type: String,
         required: false,
-        default: 'subscriber'
+        default: 'suscriptor'
     },
     creationdate: {
         type: Date,
-        default: Date.now
+        default: Date.now,
+        required: false
     },
     posts: [
         {
             type: Schema.ObjectId, 
             ref: 'Post', 
-            default: null
+            default: null,
+            required: false
         }
     ],
-    aboutMe: String,
+    aboutMe: {
+        type: String,
+        required: false
+    },
 });
 
 /* El pre middleware se ejecuta antes de que suceda la operacion. 
