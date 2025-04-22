@@ -52,7 +52,7 @@ var UserSchema = new Schema({
 Por ejemplo, un middleware pre-save sera ejecutado antes de salvar 
 el documento.  */
 
-UserSchema.pre("save", next => {
+UserSchema.pre("save", function (next) {
     var user = this;
 
     debug("En middleware pre (save)...");
@@ -64,18 +64,20 @@ UserSchema.pre("save", next => {
     bcrypt.genSalt(SALT_WORK_FACTOR)
         .then(salt => {
             // aplica una función hash al password usando la nueva salt
-            bcrypt.hash(user.password, salt)
+            return bcrypt.hash(user.password, salt)
         })
         .then(hash => {
             // sobrescribe el password escrito con el “hasheado”
             user.password = hash;
+            debug("Contraseña encriptada");
             next();
         })
-        .catch(err => next(err));
+        .catch(error => next(error));
 });
 
 
 UserSchema.methods.comparePassword = function (candidatePassword) {
+    debug("En comparación de contraselas...");
     return bcrypt.compare(candidatePassword, this.password);
 };
 

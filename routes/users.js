@@ -55,7 +55,7 @@ router.get("/all", (req, res) => {
         debug("Usuarios encontrados: ", users);
         res.status(200).json({ message: "Usuarios encontrados correctamente", users});
     })
-    .catch(error =>  res.status(500).send({ message: "Error al obtener usuarios", error }));
+    .catch(error =>  res.status(500).send({ message: "Error al obtener usuarios", error: error.message }));
 });
 
 // GET de un único usuario por su Id
@@ -69,7 +69,7 @@ router.get("/secure/:id", tokenVerify, (req, res) => {
         debug("Usuario encontrado:", users);
         res.status(200).json({ message: "Usuario encontrado correctamente", users});
     })
-    .catch(error => res.status(500).send({ message: "Error al obtener el usuario", error }));
+    .catch(error => res.status(500).send({ message: "Error al obtener el usuario", error: error.message }));
 });
 
 // POST de un nuevo usuario
@@ -80,7 +80,13 @@ router.post("/", (req, res) => {
 
     User.create(req.body)
     .then(() => res.status(200).send({ message: "Usuario creado correctamente" }))
-    .catch(error => res.status(500).send({ message: "Error al crear el usuario", error }));
+    .catch(error => {
+        if (error.code === 11000) {
+            return res.status(400).send({ message: "El username ya está en uso", error: error.message });
+        }
+
+        res.status(500).send({ message: "Error al crear el usuario", error: error.message })
+    });
 });
 
 //PUT de un usuario existente identificado por su Id
@@ -96,7 +102,7 @@ router.put("/secure/:id", tokenVerify, (req, res) => {
         res.status(200).send({ message: "Usuario modificado correctamente" })
         debug("Usuario modificado correctamente");
     })
-    .catch(error => res.status(500).send({ message: "Error al modificar el usuario", error }));
+    .catch(error => res.status(500).send({ message: "Error al modificar el usuario", error: error.message }));
 });
 
 // DELETE de un usuario existente identificado por su Id
@@ -111,7 +117,7 @@ router.delete("/secure/:id", tokenVerify, (req, res) => {
         res.status(200).send({ message: "Usuario borrado correctamente" })
         debug("Usuario borrado correctamente");
     })
-    .catch(error => res.status(500).send({ message: "Error al eliminar el usuario", error }));
+    .catch(error => res.status(500).send({ message: "Error al eliminar el usuario", error: error.message }));
 });
 
 //LOGIN
@@ -138,7 +144,7 @@ router.post("/login", function (req, res) {
         return user.comparePassword(password)
         .then(isMatch => {
             if(!isMatch){
-                debug("La contraseña no coincide");
+                debug("La contraseña no coincide: ", password);
                 return res.status(401).send({ message: "Contraseña no coincide" });
             }
 
@@ -149,21 +155,21 @@ router.post("/login", function (req, res) {
             );
 
             res.status(200).send({
-                message: "ok",
+                message: "Login completado",
                 token: token,
                 id: user._id,
                 email: user.email,
                 role: user.role
             });
         })
-        .catch(err => {
-            console.error("Error comparar contraseña", err);
-            res.status(500).send("¡Error comparando la contraseña!");
+        .catch(error => {
+            console.error("Error comparar contraseña", error);
+            res.status(500).send({message: "¡Error comparando la contraseña!", error: error.message});
         });
     })
-    .catch(err => {
-        console.error("Error en /signin:", err);
-        res.status(500).send("¡Error comprobando usuario o contraseña!");
+    .catch(error => {
+        console.error("Error en /signin:", error);
+        res.status(500).send({message: "¡Error comprobando usuario o contraseña!", error: error.message});
     });
 });
 
