@@ -1,48 +1,15 @@
 var express = require("express");
-var jwt = require("jsonwebtoken");
 var router = express.Router();
 
-// Token generation imports
-const dotenv = require('dotenv');
-dotenv.config();
-
 var debug = require("debug")("microblogging-example-api:users-route");
+
+var jwt = require("jsonwebtoken");
 
 //Models
 var User = require("../models/User.js");
 
-function tokenVerify (req, res, next) {
-    const authHeader = req.get('authorization');
-    
-    if (!authHeader) {
-        return res.status(401).send({
-            ok: false,
-            message: "No se proporcionó token de autorización"
-        })
-    }
-    
-    const token = authHeader.split(' ')[1];
-    
-    if(!token){
-        return res.status(401).send({
-            ok: false,
-            message: "Token no válido o malformado"
-        })
-    }
-    
-           
-    jwt.verify(token, process.env.TOKEN_SECRET, (err, decoded) => {
-        if (err) {
-            return res.status(401).send({
-                ok: false,
-                message: "Token inválido"
-            });
-        }
-
-        req.user = decoded;
-        next();
-    });
-}
+//Security
+const tokenVerify = require("../middlewares/tokenVerify.js");
 
 //GET de todos los usuarios
 router.get("/all", (req, res) => {
@@ -149,17 +116,24 @@ router.post("/login", function (req, res) {
             }
 
             const token = jwt.sign(
-                {id: user._id, username: user.username, role: user.role},
+                {
+                    id: user._id, 
+                    username: user.username, 
+                    role: user.role,
+                    email: user.email
+                },
                 process.env.TOKEN_SECRET,
-                { expiresIn: 3600 }
+                { 
+                    expiresIn: '1h' 
+                }
             );
 
             res.status(200).send({
                 message: "Login completado",
                 token: token,
                 id: user._id,
+                username: user.username,
                 email: user.email,
-                role: user.role
             });
         })
         .catch(error => {

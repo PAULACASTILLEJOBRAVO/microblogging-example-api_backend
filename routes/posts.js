@@ -7,9 +7,13 @@ var debug = require("debug")("microblogging-example-api:posts-route");
 var Post = require('../models/Posts');
 var User = require('../models/User');
 
+//Security
+const tokenVerify = require("../middlewares/tokenVerify.js");
+
 //GET de todos los blogs
 router.get("/all", (req, res) => {
     debug("Acceso a todos los blogs");
+    debug("Parametros recibidos:", req.params);
 
     Post.find().sort("-publicationdate").populate('user')
     .then(posts => {
@@ -20,31 +24,45 @@ router.get("/all", (req, res) => {
 });
 
 //GET de un único blog por el id del usuario que lo creó
-router.get("/:id", (req, res) => {
-    debug("Acceso a un solo blog");
+router.get("/secure/:id", tokenVerify, (req, res) => {
+    debug("Acceso seguro a un solo blog");
+    debug("Parametros recibidos:", req.params);
 
     Post.find({user: req.params.id}).sort("-publicationdate").populate('user')
     .then(posts => {
         if(!posts) return res.status(404).send({ message: "Blog no encontrado" });
+        if (posts.length === 0) return res.status(404).send({ message: "Este usuario no tiene blogs aún" });
         res.status(200).json({ message: "Blog encontrado correctamente", posts });
     })
     .catch(error =>res.status(500).send({ message: "Error al obtener el blog", error }));
 });
 
 // POST de un nuevo blog
-router.post("/", (req, res) => {
-    debug("Creación de un blog");
+router.post("/secure", tokenVerify, (req, res) => {
+    debug("Creación segura de un blog");
+    debug("Parametros recibidos:", req.params);
+    debug("Body recibido:", req.body);
+    debug("Usuario recibido:", req.user);
 
-    User.findById(req.body.user)
+    if (!req.body.title || !req.body.description) {
+        debug("Faltan campos obligatorios para el blog");
+        return res.status(400).send({ message: "Faltan campos obligatorios para el blog" });
+    }
+
+    const userId = req.user.id; 
+    const userEmail = req.user.email;
+
+    User.findById(req.user.id)
     .then(users => {
         if (!users) {
+            debug("Usuario no encontrado");
             return res.status(404).send({ message: "Usuario no encontrado" });
         }
         
         var postInstance = new Post({
-            user: req.body.user,
+            user: userId,
             title: req.body.title,
-            email: req.body.email,
+            email: userEmail,
             description: req.body.description
         });
 
@@ -60,10 +78,12 @@ router.post("/", (req, res) => {
 
 
 //PUT de un blog existente identificado por su Id
-router.put('/:id', (req, res) => {
-    debug("Modificación de un blog");
+router.put('/secure/:id', tokenVerify, (req, res) => {
+    debug("Modificación segura de un blog");
+    debug("Parametros recibidos:", req.params);
+    debug("Body recibido:", req.body);
 
-    Post.findByIdAndUpdate(req.params.id, req.body)
+    Post.findByIdAndUpdate(req.params.id, req.body, { new: true })
     .then(posts => {
         if(!posts) return res.status(404).send({ message: "Blog no encontrado" });
 
@@ -73,14 +93,15 @@ router.put('/:id', (req, res) => {
 });
 
 // DELETE de un blog existente identificado por su Id
-router.delete('/:id', (req, res) => {
-    debug("Borrado de un blog");
+router.delete('/secure/:id', tokenVerify, (req, res) => {
+    debug("Borrado seguro de un blog");
+    debug("Parametros recibidos:", req.params);
 
     Post.findByIdAndDelete(req.params.id)
     .then(posts => {
         if(!posts) return res.status(404).send({ message: "Blog no encontrado" });
 
-        User.findByIdAndUpdate(posts.user, {$pull: {posts: posts._id}})
+        User.findByIdAndUpdate(posts.user, {$pull: {posts: posts._id}}, { new: true })
         .then(() => res.status(200).send({ message: "Blog eliminado correctamente" }))
         .catch(error => res.status(500).send({ message: "Error al actualizar el usuario", error }));
     })
