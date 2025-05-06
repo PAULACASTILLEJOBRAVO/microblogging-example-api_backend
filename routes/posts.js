@@ -30,8 +30,6 @@ router.get("/secure/:id", tokenVerify, (req, res) => {
 
     Post.find({user: req.params.id}).sort("-publicationdate").populate('user')
     .then(posts => {
-        if(!posts) return res.status(404).send({ message: "Blog no encontrado" });
-        if (posts.length === 0) return res.status(404).send({ message: "Este usuario no tiene blogs aún" });
         res.status(200).json({ message: "Blog encontrado correctamente", posts });
     })
     .catch(error =>res.status(500).send({ message: "Error al obtener el blog", error }));
